@@ -9,6 +9,31 @@ const WF_API = "https://api.watchfooty.st";
 const SK_API = "https://streamed.pk";
 const SK_IMG = `${SK_API}/api/images`;
 
+/* ------------------------------------------------------------
+   Popup/Ad blocker
+   The iframe sandbox (no allow-popups) already blocks new tabs
+   spawned from inside the embed. This JS layer adds a second
+   line of defense at the page level.
+   ------------------------------------------------------------ */
+// 1) Neutralize window.open globally — any ad script that calls
+//    window.open() will get a no-op instead of a new tab.
+window.open = function () {
+  return null;
+};
+
+// 2) Intercept clicks that try to open new tabs/windows (capture phase)
+document.addEventListener(
+  "click",
+  (e) => {
+    const a = e.target.closest("a[target]");
+    if (a && (a.target === "_blank" || a.target === "_new")) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  },
+  true,
+);
+
 // Elements
 const $matches = document.getElementById("matches");
 const $status = document.getElementById("status");
