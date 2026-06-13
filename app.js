@@ -480,7 +480,20 @@ function selectStream(idx) {
 
 function playStream(stream) {
   if (!stream?.embedUrl) return;
-  $player.src = stream.embedUrl;
+  // Recreate the iframe fresh on each play so no leftover ad state
+  // can persist between stream switches.
+  const parent = $player.parentElement;
+  const fresh = document.createElement("iframe");
+  fresh.id = $player.id;
+  fresh.src = stream.embedUrl;
+  fresh.width = "100%";
+  fresh.height = "100%";
+  fresh.frameBorder = "0";
+  fresh.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
+  fresh.allowFullscreen = true;
+  fresh.referrerPolicy = "no-referrer";
+  parent.replaceChild(fresh, $player);
+  $player = fresh;
 }
 
 function updateNextServerBtn() {

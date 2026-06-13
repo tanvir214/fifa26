@@ -7,6 +7,10 @@
     <meta name="description" content="Live Football & Cricket streams" />
     <title>FootLive · Football & Cricket</title>
     <link rel="stylesheet" href="styles.css" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https: data: blob:; frame-src https:; script-src 'self' https: 'unsafe-inline'; connect-src https:; base-uri 'none'; form-action 'none';"
+    />
   </head>
   <body>
     <header class="topbar">
@@ -53,8 +57,6 @@
             frameborder="0"
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowfullscreen
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-            referrerpolicy="no-referrer"
           ></iframe>
         </div>
         <div class="player-toolbar">
