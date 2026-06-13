@@ -1,0 +1,715 @@
+================================================================================
+         COMBINED SPORTS STREAMING API DOCUMENTATION
+         Sources: WatchFooty (watchfooty.st) + Streamed (streamed.pk)
+         Generated: 2026-06-12
+================================================================================
+
+
+################################################################################
+  PART 1 — WATCHFOOTY API
+  Base URL: https://api.watchfooty.st
+################################################################################
+
+GENERAL INFO
+------------
+- No API key or account required
+- No rate limits (may be added if API is abused)
+- All responses are JSON
+- Matches returned are for today (past 12 hours + future 12 hours) by default
+- Streams are embedded via iframe using the URL in match.streams[].url
+- 13 sports supported: football, basketball, tennis, golf, baseball, hockey,
+  rugby, motorsport, cricket, boxing, MMA, american-football, and more
+
+
+================================================================================
+  WF-1. SPORTS
+================================================================================
+
+GET /api/v1/sports
+Returns all available sports.
+
+RESPONSE:
+[
+  { "name": "football",         "displayName": "Football" },
+  { "name": "hockey",           "displayName": "Hockey" },
+  { "name": "baseball",         "displayName": "Baseball" },
+  { "name": "basketball",       "displayName": "Basketball" },
+  { "name": "cricket",          "displayName": "Cricket" },
+  { "name": "tennis",           "displayName": "Tennis" },
+  { "name": "rugby",            "displayName": "Rugby" },
+  { "name": "mma",              "displayName": "MMA" },
+  { "name": "boxing",           "displayName": "Boxing" },
+  { "name": "motorsport",       "displayName": "Motorsport" },
+  { "name": "american-football","displayName": "American Football" }
+  // ...more
+]
+
+SPORT OBJECT INTERFACE:
+interface Sport {
+  name: string;         // Used in URL paths (e.g. /api/v1/matches/football)
+  displayName: string;  // Human-readable display name
+}
+
+
+================================================================================
+  WF-2. MATCHES
+================================================================================
+
+MATCH OBJECT INTERFACE:
+interface Match {
+  matchId: string;
+  title: string;                  // e.g. "Arsenal vs Manchester United"
+  poster: string;                 // Relative path: /api/v1/poster/[id]
+  teams: {
+    home: {
+      name: string;
+      logoUrl: string;            // Relative path: /api/v1/team-logo/[id]
+      logoId: string;
+    };
+    away: {
+      name: string;
+      logoUrl: string;
+      logoId: string;
+    };
+  };
+  scores: {
+    home: number | string;        // Can be "136/1" for cricket
+    away: number | string;
+  };
+  status: string;                 // "in" = live, "pre" = upcoming, "post" = finished
+  currentMinute: string;          // e.g. "45'" for football, "In Progress" for cricket
+  currentMinuteNumber: number;
+  isEvent: boolean;
+  date: string;                   // ISO 8601: "2025-01-01T00:00:00.000Z"
+  timestamp: number;              // Unix ms
+  league: string;
+  leagueLogo: string;             // Relative path: /api/v1/league-logo/[id]
+  leagueLogoId: string;
+  sport: string;
+  streams: {
+    id: string;
+    url: string;                  // Embed URL — use directly in iframe src
+    quality: string;              // e.g. "hd", "1080p", "720p"
+    language: string;             // e.g. "english", "spanish"
+    isRedirect: boolean;
+    nsfw: boolean;
+    ads: boolean;
+  }[];
+}
+
+ENDPOINTS
+---------
+
+  GET /api/v1/matches/[sport]                  Matches for a specific sport (today)
+  GET /api/v1/matches/[sport]?date=2025-01-01  Matches for sport on a specific date
+  GET /api/v1/matches/[sport]/popular          Popular matches for a sport
+  GET /api/v1/matches/[sport]/live             Live matches for a sport
+  GET /api/v1/matches/all                      All matches across all sports (today)
+  GET /api/v1/matches/all?date=2025-01-01      All matches on a specific date
+  GET /api/v1/matches/popular                  Popular matches across all sports
+  GET /api/v1/matches/popular/live             Popular live matches across all sports
+  GET /api/v1/matches/live                     All live matches across all sports
+
+EXAMPLE RESPONSE (/api/v1/matches/football):
+[
+  {
+    "matchId": "123",
+    "title": "Arsenal vs Manchester United",
+    "poster": "/api/v1/poster/123",
+    "teams": {
+      "home": { "name": "Arsenal",           "logoUrl": "/api/v1/team-logo/123", "logoId": "123" },
+      "away": { "name": "Manchester United", "logoUrl": "/api/v1/team-logo/456", "logoId": "456" }
+    },
+    "scores": { "home": 1, "away": 0 },
+    "status": "in",
+    "currentMinute": "45'",
+    "currentMinuteNumber": 45,
+    "isEvent": false,
+    "date": "2025-01-01T00:00:00.000Z",
+    "timestamp": 1714732800,
+    "league": "Premier League",
+    "leagueLogo": "/api/v1/league-logo/789",
+    "leagueLogoId": "789",
+    "sport": "football",
+    "streams": [
+      {
+        "id": "123",
+        "url": "https://spiderembed.top/embed/xxxx",
+        "quality": "hd",
+        "language": "english",
+        "isRedirect": false,
+        "nsfw": false,
+        "ads": false
+      }
+    ]
+  }
+]
+
+EMBEDDING A STREAM:
+<iframe
+  src="https://spiderembed.top/embed/xxxx"
+  width="100%"
+  height="100%"
+  frameborder="0"
+  allowfullscreen
+></iframe>
+
+NOTE: Streams are embedded via iframe. The url field in each stream object
+      is the direct embed URL. No additional stream API call is needed.
+
+
+================================================================================
+  WF-3. MATCH DETAILS
+================================================================================
+
+GET /api/v1/match/[id]
+Returns detailed information for a specific match.
+
+RESPONSE (/api/v1/match/123):
+[
+  {
+    "title": "Chelsea vs Manchester United",
+    "poster": "/api/v1/poster/123",
+    "teams": {
+      "home": { "name": "Chelsea",           "logoUrl": "/api/v1/team-logo/123", "logoId": "123" },
+      "away": { "name": "Manchester United", "logoUrl": "/api/v1/team-logo/456", "logoId": "456" }
+    },
+    "isEvent": false,
+    "date": "2025-01-01T00:00:00.000Z",
+    "timestamp": 1714732800,
+    "currentMinute": "10",
+    "currentMinuteNumber": 10,
+    "homeScore": 1,
+    "awayScore": 2,
+    "status": "in",
+    "venue": "Old Trafford",
+    "note": "",
+    "eventName": "Chelsea vs Manchester United",
+    "eventLogo": "123",
+    "eventPoster": "123",
+    "eventId": "123",
+    "eventCompetitors": [
+      {
+        "id": "456",
+        "fullName": "Manchester United",
+        "competitorImage": "/api/v1/team-logo/456",
+        "flag": "123"
+      }
+    ],
+    "league": "Premier League",
+    "leagueLogo": "/api/v1/league-logo/123",
+    "leagueLogoId": "123",
+    "sport": "football"
+  }
+]
+
+
+================================================================================
+  WF-4. MATCH STATISTICS
+================================================================================
+
+GET /api/v1/match/[id]/stats
+Returns detailed match statistics including lineups, commentary, and team stats.
+Returns 404 if statistics are not available for the match.
+
+RESPONSE (/api/v1/match/123/stats):
+{
+  // All fields from Match Details PLUS:
+  "statistics": {
+    "boxscore": {
+      "form": [
+        {
+          "events": [
+            {
+              "id": "123",
+              "score": "2-1",
+              "homeTeamScore": "1",
+              "awayTeamScore": "2",
+              "homeAggregateScore": "1",
+              "awayAggregateScore": "2",
+              "gameResult": "W",
+              "leagueName": "Premier League",
+              "opponent": { "id": "456", "displayName": "Manchester United" }
+            }
+          ]
+        }
+      ],
+      "teams": [
+        {
+          "team": { "displayName": "Chelsea", "logoId": "123" },
+          "statistics": [
+            {
+              "name": "Possession",
+              "displayValue": "65%",
+              "label": "Possession",
+              "percentage": 65
+            }
+          ]
+        }
+      ]
+    },
+    "rosters": [
+      {
+        "roster": [
+          {
+            "starter": true,
+            "jersey": "10",
+            "athlete": {
+              "fullName": "John Doe",
+              "headshot": "https://example.com/headshot.jpg"
+            },
+            "subbedOutFor": null,
+            "subbedInFor": null,
+            "subbedIn": false,
+            "subbedOut": false,
+            "plays": [
+              {
+                "didAssist": false,
+                "clock": { "displayValue": "45'" },
+                "scoringPlay": true,
+                "substitution": false,
+                "redCard": false,
+                "yellowCard": false,
+                "penaltyKick": false,
+                "ownGoal": false
+              }
+            ]
+          }
+        ],
+        "formation": "4-3-3"
+      }
+    ],
+    "commentary": [
+      {
+        "sequence": 1,
+        "time": { "value": "45", "displayValue": "45'" },
+        "text": "Goal! Chelsea scores!"
+      }
+    ],
+    "venue": "Old Trafford",
+    "penaltyShootoutScores": { "homeScore": 0, "awayScore": 0 },
+    "header": {
+      "league": { "slug": "premier-league" }
+    }
+  }
+}
+
+
+================================================================================
+  WF-5. MATCH POSTERS
+================================================================================
+
+GET /api/v1/poster/[id]
+Returns binary image data (ArrayBuffer) for a match poster.
+The [id] value comes from the "poster" field in the match object
+(strip the "/api/v1/poster/" prefix to get just the id).
+
+USAGE:
+const PosterResponse = await fetch("https://api.watchfooty.st/api/v1/poster/123");
+const PosterData = await PosterResponse.arrayBuffer();
+
+HTML USAGE:
+<img src="https://api.watchfooty.st/api/v1/poster/[id]" alt="Match Poster" />
+
+
+================================================================================
+  WF-6. TEAM LOGOS
+================================================================================
+
+GET /api/v1/team-logo/[id]
+Returns binary image data (ArrayBuffer) for a team logo.
+The [id] value comes from team.home.logoId or team.away.logoId in match objects.
+
+USAGE:
+const TeamLogoResponse = await fetch("https://api.watchfooty.st/api/v1/team-logo/123");
+const TeamLogoData = await TeamLogoResponse.arrayBuffer();
+
+HTML USAGE:
+<img src="https://api.watchfooty.st/api/v1/team-logo/[id]" alt="Team Logo" />
+
+
+================================================================================
+  WF-7. LEAGUE LOGOS
+================================================================================
+
+GET /api/v1/league-logo/[id]
+Returns binary image data (ArrayBuffer) for a league logo.
+The [id] comes from the leagueLogoId field in match objects.
+
+HTML USAGE:
+<img src="https://api.watchfooty.st/api/v1/league-logo/[id]" alt="League Logo" />
+
+
+================================================================================
+  WF-8. TOP LEAGUES
+================================================================================
+
+GET /api/v1/top-leagues              All top leagues across all sports
+GET /api/v1/top-leagues/all          Same as above (explicit)
+GET /api/v1/top-leagues/[sport]      Top leagues for a specific sport
+
+Returns: string[] — array of league name strings (including aliases)
+
+EXAMPLE RESPONSE (/api/v1/top-leagues/football):
+[
+  "Hot Matches",
+  "World Cup",
+  "English Premier League",
+  "UEFA Champions League",
+  "World Cup Qualifying",
+  "FIFA World Cup Qualifying",
+  "MLS",
+  ...
+]
+
+ERROR (invalid sport):
+{ "error": "Invalid sport" }
+
+
+================================================================================
+  WF-9. TOP TEAMS
+================================================================================
+
+GET /api/v1/top-teams              All top teams across all sports
+GET /api/v1/top-teams/all          Same as above (explicit)
+GET /api/v1/top-teams/[sport]      Top teams for a specific sport
+
+Returns: string[] — array of team name strings
+
+EXAMPLE RESPONSE (/api/v1/top-teams/football):
+[
+  "Manchester United",
+  "Liverpool",
+  "Arsenal",
+  "Chelsea",
+  "Manchester City",
+  ...
+]
+
+ERROR (invalid sport):
+{ "error": "Invalid sport" }
+
+
+================================================================================
+  WF — KEY NOTES
+================================================================================
+
+1. STREAMS ARE IN THE MATCH OBJECT
+   Unlike Streamed.pk, WatchFooty includes stream URLs directly inside the
+   match object under match.streams[]. No separate stream endpoint needed.
+
+2. STREAM URL IS A DIRECT EMBED URL
+   match.streams[].url → use directly as iframe src attribute.
+
+3. STATUS VALUES
+   "in"   = match is live now
+   "pre"  = upcoming / not started
+   "post" = finished
+
+4. CRICKET SCORES FORMAT
+   Cricket scores come as strings like "136/1" (runs/wickets), not plain numbers.
+   Always handle scores as string | number.
+
+5. IMAGE ENDPOINTS RETURN BINARY
+   /api/v1/poster, /api/v1/team-logo, /api/v1/league-logo all return image
+   binary (ArrayBuffer), not JSON. Use directly as <img src="..."> URLs.
+
+6. REAL LIVE DATA CONFIRMED
+   Live endpoint tested 2026-06-12:
+   - Football: 2 live matches (Tanzanian Premier League)
+   - Cricket: 14+ live matches (County Championship, ICC, Jharkhand PL, etc.)
+
+
+################################################################################
+  PART 2 — STREAMED.PK API
+  Base URL: https://streamed.pk
+################################################################################
+
+GENERAL INFO
+------------
+- No authentication required
+- No rate limits currently (may change)
+- All responses are JSON except /api/images/... (WebP images)
+- HTTP standard status codes (200, 404, etc.)
+
+
+================================================================================
+  SK-1. SPORTS
+================================================================================
+
+GET /api/sports
+Returns all available sport categories.
+
+SPORT OBJECT:
+interface Sport {
+  id: string;    // Used in /api/matches/[SPORT] endpoints
+  name: string;  // Display name
+}
+
+EXAMPLE RESPONSE:
+[
+  { "id": "football",   "name": "Football"   },
+  { "id": "basketball", "name": "Basketball" },
+  { "id": "tennis",     "name": "Tennis"     },
+  { "id": "hockey",     "name": "Hockey"     },
+  { "id": "baseball",   "name": "Baseball"   },
+  { "id": "mma",        "name": "MMA"        },
+  { "id": "boxing",     "name": "Boxing"     }
+]
+
+
+================================================================================
+  SK-2. MATCHES
+================================================================================
+
+MATCH OBJECT INTERFACE:
+interface APIMatch {
+  id: string;
+  title: string;           // e.g. "Manchester United vs Liverpool"
+  category: string;        // sport id, e.g. "football"
+  date: number;            // Unix timestamp in MILLISECONDS
+  poster?: string;         // URL path string (optional)
+  popular: boolean;
+  teams?: {
+    home?: { name: string; badge: string; };
+    away?: { name: string; badge: string; };
+  };
+  sources: {
+    source: string;        // Stream source name: "alpha", "bravo", etc.
+    id: string;            // Source-specific match ID for stream lookup
+  }[];
+}
+
+ENDPOINTS
+---------
+
+  GET /api/matches/[SPORT]              Matches for a specific sport
+  GET /api/matches/[SPORT]/popular      Popular matches for a specific sport
+  GET /api/matches/all                  All matches across all sports
+  GET /api/matches/all/popular          All popular matches
+  GET /api/matches/all-today            Today's matches
+  GET /api/matches/all-today/popular    Today's popular matches
+  GET /api/matches/live                 Currently live matches
+  GET /api/matches/live/popular         Currently live popular matches
+
+  Note: Replace [SPORT] with a sport id from /api/sports
+        (e.g. football, cricket, basketball, tennis, hockey, mma, boxing)
+
+EXAMPLE RESPONSE (/api/matches/football):
+[
+  {
+    "id": "match_123",
+    "title": "Manchester United vs Liverpool",
+    "category": "football",
+    "date": 1720598400000,
+    "poster": "man-utd-liverpool-poster",
+    "popular": true,
+    "teams": {
+      "home": { "name": "Manchester United", "badge": "man-utd-badge" },
+      "away": { "name": "Liverpool",         "badge": "liverpool-badge" }
+    },
+    "sources": [
+      { "source": "alpha", "id": "mu-liv-123" },
+      { "source": "bravo", "id": "456-mu-liv" }
+    ]
+  }
+]
+
+NOTE: Streamed.pk does NOT include stream URLs directly in the match object.
+      You must use the "sources" array to call the Streams API separately.
+
+
+================================================================================
+  SK-3. STREAMS
+================================================================================
+
+STREAM OBJECT INTERFACE:
+interface Stream {
+  id: string;          // Unique stream identifier
+  streamNo: number;    // Stream number/index (1, 2, 3...)
+  language: string;    // e.g. "English", "Spanish"
+  hd: boolean;         // true = HD quality
+  embedUrl: string;    // Use this directly as iframe src
+  source: string;      // Source identifier (e.g. "alpha")
+}
+
+ENDPOINTS — One per source:
+  Source     Endpoint
+  --------   --------------------------------
+  Alpha      GET /api/stream/alpha/[id]
+  Bravo      GET /api/stream/bravo/[id]
+  Charlie    GET /api/stream/charlie/[id]
+  Delta      GET /api/stream/delta/[id]
+  Echo       GET /api/stream/echo/[id]
+  Foxtrot    GET /api/stream/foxtrot/[id]
+  Golf       GET /api/stream/golf/[id]
+  Hotel      GET /api/stream/hotel/[id]
+  Intel      GET /api/stream/intel/[id]
+
+  Note: [id] = source-specific match ID from match.sources[].id
+
+HOW TO GET A STREAM (2-step process):
+  Step 1: GET /api/matches/football
+          → pick match, then pick a source: { source: "alpha", id: "mu-liv-123" }
+  Step 2: GET /api/stream/alpha/mu-liv-123
+          → returns array of stream objects with embedUrl
+
+EXAMPLE RESPONSE (/api/stream/alpha/match123):
+[
+  {
+    "id": "stream_456",
+    "streamNo": 1,
+    "language": "English",
+    "hd": true,
+    "embedUrl": "https://embed.example.com/watch?v=abcd1234",
+    "source": "alpha"
+  },
+  {
+    "id": "stream_457",
+    "streamNo": 2,
+    "language": "Spanish",
+    "hd": false,
+    "embedUrl": "https://embed.example.com/watch?v=efgh5678",
+    "source": "alpha"
+  }
+]
+
+EMBEDDING A STREAM (HTML):
+<iframe
+  id="stream-player"
+  src="https://embed.example.com/watch?v=abcd1234"
+  width="640"
+  height="360"
+  frameborder="0"
+  allowfullscreen>
+</iframe>
+
+
+================================================================================
+  SK-4. IMAGES
+================================================================================
+
+All images served as WebP format for optimal performance.
+
+Team Badges:
+  GET /api/images/badge/[id].webp
+  - [id] = team.home.badge or team.away.badge from match object
+  - Example: /api/images/badge/man-utd-badge.webp
+
+Match Posters:
+  GET /api/images/poster/[badge1]/[badge2].webp
+  - [badge1] = home team badge ID
+  - [badge2] = away team badge ID
+  - Example: /api/images/poster/man-utd-badge/liverpool-badge.webp
+
+Proxied Images:
+  GET /api/images/proxy/[poster].webp
+  - [poster] = value from match.poster field
+  - Example: /api/images/proxy/custom-event-poster.webp
+
+HTML EXAMPLES:
+<img src="https://streamed.pk/api/images/badge/man-utd-badge.webp"
+     alt="Manchester United" width="50" height="50" />
+
+<img src="https://streamed.pk/api/images/poster/man-utd-badge/liverpool-badge.webp"
+     alt="Match Poster" />
+
+<img src="https://streamed.pk/api/images/proxy/custom-event-poster.webp"
+     alt="Event Poster" />
+
+IMAGE TIPS:
+- All images are .webp — set width/height to prevent layout shift
+- Use loading="lazy" for below-the-fold images
+- Fully compatible with responsive CSS
+
+
+================================================================================
+  SK — KEY NOTES
+================================================================================
+
+1. STREAMS REQUIRE A SEPARATE API CALL
+   Unlike WatchFooty, Streamed.pk match objects do NOT contain stream URLs.
+   You must call /api/stream/[source]/[id] separately using data from sources[].
+
+2. MULTIPLE SOURCES = MULTIPLE STREAM OPTIONS
+   Each match may have several sources (alpha, bravo, charlie, etc.).
+   Each source can have multiple stream options (different languages, HD/SD).
+   Total stream options = sum of all streams across all sources.
+
+3. FAILOVER STRATEGY
+   Try sources in order. If one fails or returns empty, try the next.
+   Recommended order: alpha → bravo → charlie → delta → echo → foxtrot → golf → hotel → intel
+
+4. DATE FORMAT
+   match.date is a Unix timestamp in MILLISECONDS (not seconds).
+   Use new Date(match.date) to convert.
+
+
+################################################################################
+  PART 3 — COMPARISON: WATCHFOOTY vs STREAMED.PK
+################################################################################
+
+  Feature                    WatchFooty              Streamed.pk
+  -------------------------  ----------------------  ----------------------
+  Base URL                   api.watchfooty.st       streamed.pk
+  Auth required              No                      No
+  Rate limits                No (abuse may change)   No (may change)
+  Sports covered             13+                     7+
+  Stream URL in match obj    YES (streams[].url)     NO (need /api/stream/...)
+  Separate stream endpoint   No                      YES (/api/stream/[src]/[id])
+  Match scores               Yes (+ cricket format)  Not in base match obj
+  Live match minute          Yes (currentMinute)     Not applicable
+  Match statistics           Yes (/match/[id]/stats) No
+  Match details endpoint     Yes (/match/[id])       No
+  Team logos                 Yes (binary image)      Yes (WebP)
+  League logos               Yes (binary image)      Yes (WebP)
+  Top teams list             Yes                     No
+  Top leagues list           Yes                     No
+  Filter by popular          Yes                     Yes
+  Filter by live             Yes                     Yes
+  Filter by date             Yes (?date=YYYY-MM-DD)  No
+  Cricket support            YES (confirmed live)    YES (if in sports list)
+  Stream sources count       1 embed per stream obj  9 named sources
+  Stream quality field       "hd", "720p", etc.      hd: boolean
+  Stream language field      "english", "spanish"    "English", "Spanish"
+
+
+################################################################################
+  PART 4 — RECOMMENDED INTEGRATION STRATEGY
+################################################################################
+
+For a football + cricket streaming app combining both sources:
+
+MATCH DATA STRATEGY:
+1. Fetch live football from both APIs in parallel:
+   - WatchFooty: GET /api/v1/matches/football/live
+   - Streamed.pk: GET /api/matches/live (filter by category === "football")
+2. Fetch live cricket from both APIs in parallel:
+   - WatchFooty: GET /api/v1/matches/cricket/live
+   - Streamed.pk: GET /api/matches/live (filter by category === "cricket")
+3. Merge by title match (normalize team names to lowercase for deduplication)
+4. Prefer WatchFooty data for scores and match details
+5. Prefer Streamed.pk data for additional stream sources
+
+STREAM DATA STRATEGY:
+- Primary: Use WatchFooty match.streams[] directly (embed URLs already present)
+- Fallback: If WatchFooty has no streams, call Streamed.pk /api/stream/[src]/[id]
+  for each source in match.sources[]
+- Cycle through all sources automatically on failure
+
+IMAGE STRATEGY:
+- Team logos: Prefer WatchFooty (https://api.watchfooty.st/api/v1/team-logo/[id])
+- Fallback: Streamed.pk (https://streamed.pk/api/images/badge/[id].webp)
+
+AUTO-REFRESH INTERVAL:
+- Match list: every 30–60 seconds
+- Live scores: every 15–30 seconds
+- Streams: only on match selection or playback failure
+
+
+================================================================================
+  END OF COMBINED API DOCUMENTATION
+  WatchFooty: https://watchfooty.st/docs/api
+  Streamed.pk: https://streamed.pk/docs
+  Generated: 2026-06-12
+================================================================================
